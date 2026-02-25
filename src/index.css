@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 20% 97%;
+    --foreground: 20 10% 8%;
+
+    --card: 30 15% 99%;
+    --card-foreground: 20 10% 8%;
+
+    --popover: 30 15% 99%;
+    --popover-foreground: 20 10% 8%;
+
+    --primary: 20 10% 8%;
+    --primary-foreground: 30 20% 97%;
+
+    --secondary: 28 30% 88%;
+    --secondary-foreground: 20 10% 15%;
+
+    --muted: 30 15% 93%;
+    --muted-foreground: 20 5% 45%;
+
+    --accent: 28 40% 92%;
+    --accent-foreground: 20 10% 12%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 15% 90%;
+    --input: 30 15% 90%;
+    --ring: 20 10% 8%;
+
+    --radius: 0.5rem;
+
+    --warm: 28 60% 50%;
+    --warm-light: 30 40% 95%;
+    --warm-dark: 20 30% 20%;
+
+    --gradient-warm: linear-gradient(135deg, hsl(28 60% 50%), hsl(15 50% 42%));
+    --gradient-hero: linear-gradient(180deg, hsl(30 20% 97%) 0%, hsl(28 30% 93%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(20 10% 8%) 0%, hsl(20 15% 14%) 100%);
+    --gradient-editorial: linear-gradient(135deg, hsl(30 20% 97%), hsl(28 25% 90%));
+
+    --shadow-soft: 0 2px 20px -4px hsl(20 10% 8% / 0.06);
+    --shadow-medium: 0 8px 40px -8px hsl(20 10% 8% / 0.1);
+    --shadow-elevated: 0 20px 60px -12px hsl(20 10% 8% / 0.15);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  .dark {
+    --background: 20 10% 6%;
+    --foreground: 30 15% 95%;
+    --card: 20 10% 10%;
+    --card-foreground: 30 15% 95%;
+    --popover: 20 10% 10%;
+    --popover-foreground: 30 15% 95%;
+    --primary: 30 15% 95%;
+    --primary-foreground: 20 10% 6%;
+    --secondary: 20 15% 18%;
+    --secondary-foreground: 30 15% 90%;
+    --muted: 20 10% 15%;
+    --muted-foreground: 30 10% 55%;
+    --accent: 20 15% 18%;
+    --accent-foreground: 30 15% 90%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 20 10% 18%;
+    --input: 20 10% 18%;
+    --ring: 30 15% 90%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+@layer utilities {
+  .gradient-warm {
+    background-image: var(--gradient-warm);
+  }
+  .gradient-hero-bg {
+    background-image: var(--gradient-hero);
+  }
+  .gradient-dark-bg {
+    background-image: var(--gradient-dark);
+  }
+  .gradient-editorial {
+    background-image: var(--gradient-editorial);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  .text-warm {
+    color: hsl(var(--warm));
+  }
+  .bg-warm {
+    background-color: hsl(var(--warm));
+  }
+  .bg-warm-light {
+    background-color: hsl(var(--warm-light));
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground));
+  border-radius: 3px;
+}
+
+/* Marquee */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
