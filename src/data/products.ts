@@ -9,7 +9,7 @@ export interface ProductDetailType extends Product {
 const products: ProductDetailType[] = [
   {
     id: 1,
-    name: "Product 1",
+    name: "BERLIN",
     description: "Description for Product 1.",
     price: 999,
     originalPrice: 1299,
