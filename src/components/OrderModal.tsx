@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Product } from "./ProductCard";
+import type { CartItem } from "@/context/CartContext";
 import { formatPrice } from "../lib/utils";
 import emailjs from '@emailjs/browser';
 
@@ -14,15 +15,22 @@ const EMAILJS_PUBLIC_KEY = 'SXT_o5r2zoR3PLUk8';
 emailjs.init(EMAILJS_PUBLIC_KEY);
 
 interface OrderModalProps {
-  product: Product;
+  product?: Product;
+  cartItems?: CartItem[];
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const OrderModal = ({ product, onClose, onSuccess }: OrderModalProps) => {
+const OrderModal = ({ product, cartItems, onClose, onSuccess }: OrderModalProps) => {
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Derive what to show: cart items take priority over single product
+  const isCart = cartItems && cartItems.length > 0;
+  const totalPrice = isCart
+    ? cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0)
+    : product?.price ?? 0;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -34,16 +42,23 @@ const OrderModal = ({ product, onClose, onSuccess }: OrderModalProps) => {
     setError(null);
 
     try {
-      console.log('Starting email send process...');
-      console.log('Service ID:', EMAILJS_SERVICE_ID);
-      console.log('Template ID:', EMAILJS_TEMPLATE_ID);
+      // Build a product summary for the email
+      const productSummary = isCart
+        ? cartItems
+          .map(
+            (i) =>
+              `${i.product.name} (Size: ${i.size}, Qty: ${i.quantity}) - ${formatPrice(
+                i.product.price * i.quantity
+              )}`
+          )
+          .join("\n")
+        : `${product!.name} - ${formatPrice(product!.price)}`;
 
-      // Send email using EmailJS
       const templateParams = {
         to_name: form.name,
         from_name: "Happo E-Commerce",
-        product_name: product.name,
-        product_price: formatPrice(product.price),
+        product_name: productSummary,
+        product_price: formatPrice(totalPrice),
         customer_name: form.name,
         customer_email: form.email,
         customer_phone: form.phone,
@@ -51,8 +66,6 @@ const OrderModal = ({ product, onClose, onSuccess }: OrderModalProps) => {
         order_date: new Date().toLocaleDateString(),
         reply_to: form.email,
       };
-
-      console.log('Template params:', templateParams);
 
       const result = await emailjs.send(
         EMAILJS_SERVICE_ID,
@@ -76,7 +89,7 @@ const OrderModal = ({ product, onClose, onSuccess }: OrderModalProps) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       >
         {/* Backdrop */}
         <motion.div
@@ -92,75 +105,125 @@ const OrderModal = ({ product, onClose, onSuccess }: OrderModalProps) => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.97 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative bg-card w-full max-w-md shadow-elevated overflow-hidden"
+          className="relative bg-card w-full max-w-md shadow-elevated overflow-hidden max-h-[90vh] flex flex-col"
         >
-          {/* Header */}
-          <div className="bg-primary p-6 flex items-center gap-4">
-            <img src={product.image} alt={product.name} className="w-16 h-20 object-cover" />
-            <div className="flex-1 min-w-0">
-              <h3 className="font-heading text-lg font-medium text-primary-foreground truncate">{product.name}</h3>
-              <p className="text-primary-foreground/70 text-sm font-semibold mt-1">{formatPrice(product.price)}</p>
+          {/* Header — single product */}
+          {!isCart && product && (
+            <div className="bg-primary p-6 flex items-center gap-4 shrink-0">
+              <img src={product.image} alt={product.name} className="w-16 h-20 object-cover" />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-heading text-lg font-medium text-primary-foreground truncate">{product.name}</h3>
+                <p className="text-primary-foreground/70 text-sm font-semibold mt-1">{formatPrice(product.price)}</p>
+              </div>
+              <button onClick={onClose} className="text-primary-foreground/50 hover:text-primary-foreground transition-colors">
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <button onClick={onClose} className="text-primary-foreground/50 hover:text-primary-foreground transition-colors">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+          )}
+
+          {/* Header — multiple cart items */}
+          {isCart && (
+            <div className="bg-primary shrink-0">
+              <div className="flex items-center justify-between px-6 pt-5 pb-3">
+                <div>
+                  <h3 className="font-heading text-lg font-medium text-primary-foreground">
+                    Your Order ({cartItems.reduce((a, i) => a + i.quantity, 0)} items)
+                  </h3>
+                  <p className="text-primary-foreground/70 text-sm font-semibold mt-0.5">
+                    Total: {formatPrice(totalPrice)}
+                  </p>
+                </div>
+                <button onClick={onClose} className="text-primary-foreground/50 hover:text-primary-foreground transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Scrollable cart items list */}
+              <div className="px-6 pb-4 space-y-2 max-h-48 overflow-y-auto">
+                {cartItems.map((item) => (
+                  <div
+                    key={`${item.product.id}-${item.size}`}
+                    className="flex items-center gap-3 bg-white/10 rounded-lg px-3 py-2"
+                  >
+                    <img
+                      src={item.product.image}
+                      alt={item.product.name}
+                      className="w-10 h-12 object-cover rounded shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-primary-foreground text-sm font-medium truncate">
+                        {item.product.name}
+                      </p>
+                      <p className="text-primary-foreground/60 text-xs">
+                        Size: {item.size} &middot; Qty: {item.quantity}
+                      </p>
+                    </div>
+                    <span className="text-primary-foreground text-sm font-semibold shrink-0">
+                      {formatPrice(item.product.price * item.quantity)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
-            {[
-              { name: "name", label: "Full Name", type: "text", placeholder: "Your name" },
-              { name: "email", label: "Email", type: "email", placeholder: "you@email.com" },
-              { name: "phone", label: "Phone", type: "tel", placeholder: "+1 (555) 123-4567" },
-            ].map((field) => (
-              <div key={field.name}>
+          <div className="overflow-y-auto">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              {[
+                { name: "name", label: "Full Name", type: "text", placeholder: "Your name" },
+                { name: "email", label: "Email", type: "email", placeholder: "you@email.com" },
+                { name: "phone", label: "Phone", type: "tel", placeholder: "+91 98765 43210" },
+              ].map((field) => (
+                <div key={field.name}>
+                  <label className="text-xs font-medium tracking-[0.1em] uppercase text-muted-foreground mb-2 block">
+                    {field.label}
+                  </label>
+                  <input
+                    name={field.name}
+                    type={field.type}
+                    required
+                    value={form[field.name as keyof typeof form]}
+                    onChange={handleChange}
+                    placeholder={field.placeholder}
+                    className="w-full px-4 py-3 border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+                  />
+                </div>
+              ))}
+              <div>
                 <label className="text-xs font-medium tracking-[0.1em] uppercase text-muted-foreground mb-2 block">
-                  {field.label}
+                  Delivery Address
                 </label>
-                <input
-                  name={field.name}
-                  type={field.type}
+                <textarea
+                  name="address"
                   required
-                  value={form[field.name as keyof typeof form]}
+                  value={form.address}
                   onChange={handleChange}
-                  placeholder={field.placeholder}
-                  className="w-full px-4 py-3 border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+                  rows={3}
+                  placeholder="123 Main St, City, State, ZIP"
+                  className="w-full px-4 py-3 border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-all resize-none"
                 />
               </div>
-            ))}
-            <div>
-              <label className="text-xs font-medium tracking-[0.1em] uppercase text-muted-foreground mb-2 block">
-                Delivery Address
-              </label>
-              <textarea
-                name="address"
-                required
-                value={form.address}
-                onChange={handleChange}
-                rows={3}
-                placeholder="123 Main St, City, State, ZIP"
-                className="w-full px-4 py-3 border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-all resize-none"
-              />
-            </div>
 
-            {error && (
-              <div className="text-red-500 text-sm text-center bg-red-50 p-3 rounded">
-                {error}
-              </div>
-            )}
-
-            <motion.button
-              type="submit"
-              disabled={submitting}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-primary text-primary-foreground py-3.5 text-xs font-medium tracking-[0.2em] uppercase flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50"
-            >
-              {submitting ? "Placing Order..." : (
-                <><CheckCircle className="h-4 w-4" /> Confirm Order</>
+              {error && (
+                <div className="text-red-500 text-sm text-center bg-red-50 p-3 rounded">
+                  {error}
+                </div>
               )}
-            </motion.button>
-          </form>
+
+              <motion.button
+                type="submit"
+                disabled={submitting}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full bg-primary text-primary-foreground py-3.5 text-xs font-medium tracking-[0.2em] uppercase flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                {submitting ? "Placing Order..." : (
+                  <><CheckCircle className="h-4 w-4" /> Confirm Order</>
+                )}
+              </motion.button>
+            </form>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>

@@ -1,6 +1,8 @@
 import { Star, ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "../lib/utils";
+import { useCart } from "@/context/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Product {
   id: number;
@@ -24,6 +26,18 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, onOrder, index }: ProductCardProps) => {
   const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const defaultSize = product.sizes?.[0] ?? "ONE SIZE";
+    addToCart(product, defaultSize);
+    toast({
+      title: "Added to cart!",
+      description: `${product.name} (${defaultSize}) added to your cart.`,
+    });
+  };
 
   return (
     <motion.div
@@ -53,7 +67,20 @@ const ProductCard = ({ product, onOrder, index }: ProductCardProps) => {
           -{discount}%
         </span>
 
-        {/* Removed Order Now button and overlay for new flow */}
+        {/* Add to Cart hover overlay */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          whileHover={{ opacity: 1, y: 0 }}
+          className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        >
+          <button
+            onClick={handleAddToCart}
+            className="w-full flex items-center justify-center gap-2 bg-white text-black py-2.5 text-xs font-semibold tracking-[0.12em] uppercase hover:bg-warm hover:text-white transition-colors duration-200"
+          >
+            <ShoppingCart className="h-3.5 w-3.5" />
+            Add to Cart
+          </button>
+        </motion.div>
       </div>
 
       {/* Info */}

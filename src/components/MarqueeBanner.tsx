@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 
 const marqueeItems = [
-  "FREE SHIPPING OVER $100",
+  "FREE SHIPPING OVER ₹899",
   "★",
   "PREMIUM FABRICS",
   "★",
@@ -9,7 +9,7 @@ const marqueeItems = [
   "★",
   "NEW ARRIVALS WEEKLY",
   "★",
-  "EASY RETURNS",
+  "contact us on whatsapp: 91000 46446",
   "★",
 ];
 
