@@ -42,6 +42,13 @@ const OrderModal = ({ product, cartItems, onClose, onSuccess }: OrderModalProps)
     setError(null);
 
     try {
+      // Build full absolute image URL so Gmail can load it
+      // (relative paths like /products/... only work on localhost, not in email)
+      const origin = window.location.origin;
+
+      const getAbsoluteImage = (path: string) =>
+        path.startsWith('http') ? path : `${origin}${path}`;
+
       // Build a product summary for the email
       const productSummary = isCart
         ? cartItems
@@ -54,11 +61,28 @@ const OrderModal = ({ product, cartItems, onClose, onSuccess }: OrderModalProps)
           .join("\n")
         : `${product!.name} - ${formatPrice(product!.price)}`;
 
+      // Product images — absolute URLs for email rendering
+      const productImageUrl = isCart
+        ? getAbsoluteImage(cartItems[0].product.image)
+        : getAbsoluteImage(product!.image);
+
+      // For cart orders, build an HTML image list
+      const cartImagesHtml = isCart
+        ? cartItems
+          .map(
+            (i) =>
+              `<img src="${getAbsoluteImage(i.product.image)}" alt="${i.product.name}" width="80" style="margin:4px;border-radius:4px;"/>`
+          )
+          .join('')
+        : '';
+
       const templateParams = {
         to_name: form.name,
         from_name: "Happo E-Commerce",
         product_name: productSummary,
         product_price: formatPrice(totalPrice),
+        product_image: productImageUrl,       // single product image (absolute URL)
+        product_images_html: cartImagesHtml,  // all cart images as HTML (for cart orders)
         customer_name: form.name,
         customer_email: form.email,
         customer_phone: form.phone,
